@@ -5,31 +5,32 @@ on:
 
 jobs:
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-15
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Hermes toolchain
+        uses: ./.github/actions/setup-pm
         with:
-          node-version: 22
-          cache: npm
+          toolchain: all
 
-      - name: Install dependencies
+      - name: Install JavaScript dependencies
         run: npm ci
 
       - name: Build macOS DMG
         working-directory: apps/desktop
         run: npm run dist:mac:dmg
 
-      - name: List build output
+      - name: Show build output
+        if: always()
         run: |
-          echo "Build output:"
-          find apps/desktop/release -maxdepth 2 -type f -print
+          echo "=== Release directory ==="
+          find apps/desktop/release -maxdepth 2 -type f -print 2>/dev/null || true
 
       - name: Upload DMG
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Hermes-macOS-DMG
