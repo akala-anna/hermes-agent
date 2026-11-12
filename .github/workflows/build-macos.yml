@@ -17,7 +17,7 @@ jobs:
           toolchain: all
 
       - name: Install JavaScript dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build macOS DMG
         working-directory: apps/desktop
@@ -28,6 +28,7 @@ jobs:
         run: |
           echo "=== Release directory ==="
           find apps/desktop/release -maxdepth 2 -type f -print 2>/dev/null || true
+
       - name: Upload DMG
         if: success()
         uses: actions/upload-artifact@v4
