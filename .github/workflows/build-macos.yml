@@ -17,11 +17,13 @@ jobs:
           toolchain: all
 
       - name: Install JavaScript dependencies
-        run: npm install
+        run: |
+          source ./activate
+          pnpm install --frozen-lockfile
 
       - name: Build macOS DMG
         working-directory: apps/desktop
-        run: npm run dist:mac:dmg
+        run: pnpm run dist:mac:dmg
 
       - name: Show build output
         if: always()
