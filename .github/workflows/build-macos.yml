@@ -1,3 +1,4 @@
+
 name: Build Hermes macOS DMG
 
 on:
@@ -8,26 +9,34 @@ jobs:
     runs-on: macos-15
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Hermes toolchain
-        uses: ./.github/actions/setup-pm
-        with:
-          toolchain: all
+      - name: Prepare desktop dependencies
+        run: |
+          python3 scripts/bundles/desktop.py \
+            --commit "$GITHUB_SHA" \
+            --variant bundled \
+            --prepare-only \
+            --work "$RUNNER_TEMP/desktop-job" \
+            --cache "$GITHUB_WORKSPACE/.cache/desktop-inputs"
 
-      - name: Install JavaScript dependencies
-        run: npm ci
-
-      - name: Build macOS DMG
-        working-directory: apps/desktop
-        run: npm run dist:mac:dmg
-
-      - name: Show build output
+      - name: Diagnose get-windows helper
         if: always()
         run: |
-          echo "=== Release directory ==="
-          find apps/desktop/release -maxdepth 2 -type f -print 2>/dev/null || true
+          echo "Checking get-windows installations..."
+
+          find . -path '*/get-windows/package.json' -print
+
+          echo "Checking macOS helper..."
+
+          find . -path '*/get-windows/main' -type f -print
+
+      - name: Build macOS application
+        run: |
+          python3 scripts/bundles/desktop.py \
+            --prepared "$RUNNER_TEMP/desktop-job/prepared.json" \
+            --variant bundled
 
       - name: Upload DMG
         if: success()
@@ -35,4 +44,12 @@ jobs:
         with:
           name: Hermes-macOS-DMG
           path: apps/desktop/release/*.dmg
+          if-no-files-found: error
+
+      - name: Upload ZIP
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hermes-macOS-ZIP
+          path: apps/desktop/release/*.zip
           if-no-files-found: error
